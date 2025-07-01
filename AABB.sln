@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AABB", "AABB\AABB.csproj", "{88588F58-A204-4A41-884C-47B8EB23BCB0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{55414012-B34F-4503-8047-354CC8D2D515}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{522CE630-3012-45C3-A60B-CBCD02930970}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{88588F58-A204-4A41-884C-47B8EB23BCB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88588F58-A204-4A41-884C-47B8EB23BCB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88588F58-A204-4A41-884C-47B8EB23BCB0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55414012-B34F-4503-8047-354CC8D2D515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55414012-B34F-4503-8047-354CC8D2D515}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55414012-B34F-4503-8047-354CC8D2D515}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55414012-B34F-4503-8047-354CC8D2D515}.Release|Any CPU.Build.0 = Release|Any CPU
+		{522CE630-3012-45C3-A60B-CBCD02930970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{522CE630-3012-45C3-A60B-CBCD02930970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{522CE630-3012-45C3-A60B-CBCD02930970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{522CE630-3012-45C3-A60B-CBCD02930970}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
