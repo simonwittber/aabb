@@ -9,6 +9,9 @@ namespace AABB.Benchmarks;
 [MemoryDiagnoser]
 public class MyBenchmarks
 {
+    [Params(CollisionTester.Architecture.Scalar, CollisionTester.Architecture.Threaded, CollisionTester.Architecture.Vectorized, CollisionTester.Architecture.ThreadedVectorized, CollisionTester.Architecture.Auto)]
+    public CollisionTester.Architecture architecture;
+    
     [Params(10, 100, 1000, 10000, 100000)]
     public int N = 1000;
     private BoxBuffer bufferA, bufferB;
@@ -19,7 +22,7 @@ public class MyBenchmarks
         bufferA = new BoxBuffer();
         bufferB = new BoxBuffer();
         var rnd = new System.Random(1979);
-        float P() => rnd.NextSingle() * 1000;
+        float P() => rnd.NextSingle() * 2000;
         float S() => rnd.NextSingle() * 50;
         
         for (int i = 0; i < N/10; i++)
@@ -33,31 +36,12 @@ public class MyBenchmarks
     }
 
     [Benchmark(OperationsPerInvoke =1)]
-    public void TestCollisions_Scalar()
+    public void TestCollisions()
     {
-        collider.architecture = CollisionTester.Architecture.Scalar;
+        collider.architecture = architecture;
         collider.Collisions(bufferA, bufferB);    
     }
     
-    [Benchmark(OperationsPerInvoke =1)]
-    public void TestCollisions_Threaded()
-    {
-        collider.architecture = CollisionTester.Architecture.Threaded;
-        collider.Collisions(bufferA, bufferB);    
-    }
-    
-    [Benchmark(OperationsPerInvoke =1)]
-    public void TestCollisions_Vectorized()
-    {
-        collider.architecture = CollisionTester.Architecture.Vectorized;
-        collider.Collisions(bufferA, bufferB);    
-    }
-    
-    [Benchmark(OperationsPerInvoke =1)]
-    public void TestCollisions_TheadedVectorized()
-    {
-        collider.architecture = CollisionTester.Architecture.ThreadedVectorized;
-        collider.Collisions(bufferA, bufferB);    
-    }
+   
    
 }

@@ -6,7 +6,7 @@ namespace AABB;
 public class BoxBuffer
 {
     internal int[] ids = new int[37];
-    internal int[] idMap = new int[37];
+    private int[] idMap = new int[37];
     internal float[] centerX = new float[37];
     internal float[] centerY = new float[37];
     internal float[] extentX = new float[37];
@@ -79,12 +79,12 @@ public class BoxBuffer
 
 public partial class CollisionTester
 {
-    public List<(int aIndex, int bIndex)> intersectsX = new(37);
-    public List<(int aIndex, int bIndex)> intersectsY = new(37);
+    private List<(int aIndex, int bIndex)> intersectsX = new(37);
+    private List<(int aIndex, int bIndex)> intersectsY = new(37);
 
     public enum Architecture
     {
-        Threaded, Vectorized, ThreadedVectorized, Scalar
+        Threaded, Vectorized, ThreadedVectorized, Scalar, Auto
     }
     
     public Architecture architecture = Architecture.ThreadedVectorized;
@@ -100,6 +100,7 @@ public partial class CollisionTester
         intersectsX.Clear();
         if (bufferA.Count > 0 && bufferB.Count > 0)
         {
+            architecture = ChooseArchitecture(bufferA.Count);
             switch (architecture)
             {
                 case Architecture.ThreadedVectorized:
@@ -115,14 +116,35 @@ public partial class CollisionTester
                     BufferVsBuffer_Threaded(bufferA.centerX, bufferA.extentX, bufferA.Count, bufferB.centerX, bufferB.extentX, bufferB.Count, intersectsX);
                     break;
             }
-            
         }
+    }
+
+    private Architecture ChooseArchitecture(int workload)
+    {
+        if (architecture == Architecture.Auto)
+        {
+            // Automatically determine the best architecture based on the workload
+            if (workload < 100)
+            {
+                architecture = Architecture.Scalar;
+            }
+            else if (workload < 1000)
+            {
+                architecture = Architecture.Vectorized;
+            }
+            else
+            {
+                architecture = Architecture.ThreadedVectorized;
+            }
+        }
+        return architecture;
     }
 
     List<(int aIndex, int bIndex)> NarrowPhaseCollisions(BoxBuffer bufferA, BoxBuffer bufferB)
     {
         intersectsY.Clear();
         if (intersectsX.Count <= 0) return intersectsY;
+        architecture = ChooseArchitecture(intersectsX.Count);
         switch (architecture)
         {
             case Architecture.Threaded:

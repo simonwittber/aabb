@@ -9,61 +9,60 @@ public partial class CollisionTester
         float[] aCenters, float[] aExtents, int aCount,
         float[] bCenters, float[] bExtents, int bCount, List<(int aIndex, int bIndex)> results)
     {
-        var ranges = Partitioner.Create(0, aCount);
-        var allResults = new ConcurrentBag<List<(int, int)>>();
-
-        Parallel.ForEach(ranges,
+        Parallel.For(
+            0, aCount,
             () => new List<(int aIndex, int bIndex)>(),
-            (range, state, localResults) => BufferVsBuffer_Threaded_Vectorized_Worker(aCenters, aExtents, range, bCenters, bExtents, bCount, localResults),
-            localResults => { allResults.Add(localResults); });
-        foreach (var i in allResults) results.AddRange(i);
+            (i, state, localResults) => BufferVsBuffer_Threaded_Vectorized_Worker(aCenters, aExtents, i, bCenters, bExtents, bCount, localResults),
+            localResults =>
+            {
+                lock(results)
+                    results.AddRange(localResults);
+            });
     }
 
-    private static List<(int aIndex, int bIndex)> BufferVsBuffer_Threaded_Vectorized_Worker(float[] aCenters, float[] aExtents, Tuple<int, int> range, float[] bCenters, float[] bExtents, int bCount, List<(int aIndex, int bIndex)> results)
+    private static List<(int aIndex, int bIndex)> BufferVsBuffer_Threaded_Vectorized_Worker(float[] aCenters, float[] aExtents, int i, float[] bCenters, float[] bExtents, int bCount, List<(int aIndex, int bIndex)> results)
     {
         var W = Vector<float>.Count;
-        (int startIndex, int endIndex) = range;
-        for (var i = startIndex; i < endIndex; i++)
+
+        // build the scalar AABB[i] min/max as a Vector
+        var center = new Vector<float>(aCenters[i]);
+        var extent = new Vector<float>(aExtents[i]);
+        var min = center - extent;
+        var max = center + extent;
+
+        var j = 0;
+        // vectorized inner loop
+        for (; j + W <= bCount; j += W)
         {
-            // build the scalar AABB[i] min/max as a Vector
-            var center = new Vector<float>(aCenters[i]);
-            var extent = new Vector<float>(aExtents[i]);
-            var min = center - extent;
-            var max = center + extent;
+            var testCenter = new Vector<float>(bCenters.AsSpan(j, W));
+            var testExtent = new Vector<float>(bExtents.AsSpan(j, W));
+            var testMin = testCenter - testExtent;
+            var testMax = testCenter + testExtent;
 
-            var j = 0;
-            // vectorized inner loop
-            for (; j + W <= bCount; j += W)
+            // overlap on X if aMin <= bMax && aMax >= bMin
+            var mask = Vector.LessThanOrEqual(min, testMax) & Vector.GreaterThanOrEqual(max, testMin);
+
+            // extract set lanes
+            for (var k = 0; k < W; k++)
             {
-                var testCenter = new Vector<float>(bCenters.AsSpan(j, W));
-                var testExtent = new Vector<float>(bExtents.AsSpan(j, W));
-                var testMin = testCenter - testExtent;
-                var testMax = testCenter + testExtent;
-
-                // overlap on X if aMin <= bMax && aMax >= bMin
-                var mask = Vector.LessThanOrEqual(min, testMax) & Vector.GreaterThanOrEqual(max, testMin);
-
-                // extract set lanes
-                for (var k = 0; k < W; k++)
-                {
-                    if (mask[k] != 0)
-                    {
-                        // Mark intersection
-                        results.Add((i, j + k));
-                    }
-                }
-            }
-
-            // scalar remainder that could not be vectorized
-            for (; j < bCount; j++)
-            {
-                if (aCenters[i] - aExtents[i] <= bCenters[j] + bExtents[j] && aCenters[i] + aExtents[i] >= bCenters[j] - bExtents[j])
+                if (mask[k] != 0)
                 {
                     // Mark intersection
-                    results.Add((i, j));
+                    results.Add((i, j + k));
                 }
             }
         }
+
+        // scalar remainder that could not be vectorized
+        for (; j < bCount; j++)
+        {
+            if (aCenters[i] - aExtents[i] <= bCenters[j] + bExtents[j] && aCenters[i] + aExtents[i] >= bCenters[j] - bExtents[j])
+            {
+                // Mark intersection
+                results.Add((i, j));
+            }
+        }
+
 
         return results;
     }
@@ -71,13 +70,15 @@ public partial class CollisionTester
     private void NarrowSweep_Vectorized_Threaded(BoxBuffer bufferA, BoxBuffer bufferB, List<(int aIndex, int bIndex)> results)
     {
         var ranges = Partitioner.Create(0, intersectsX.Count);
-        var allResults = new ConcurrentBag<List<(int, int)>>();
 
         Parallel.ForEach(ranges,
             () => new List<(int aIndex, int bIndex)>(),
             (range, state, localResults) => NarrowSweep_Vectorized_Threaded_Worker(bufferA, bufferB, range, localResults),
-            localResults => { allResults.Add(localResults); });
-        foreach (var i in allResults) results.AddRange(i);
+            localResults =>
+            {
+                lock(results)
+                    results.AddRange(localResults);
+            });
     }
 
     private List<(int aIndex, int bIndex)> NarrowSweep_Vectorized_Threaded_Worker(BoxBuffer bufferA, BoxBuffer bufferB, Tuple<int, int> range, List<(int aIndex, int bIndex)> localResults)
@@ -137,9 +138,7 @@ public partial class CollisionTester
                 localResults.Add((dynamicIndex, staticIndex));
             }
         }
+
         return localResults;
     }
-    
-    
-    
 }

@@ -22,10 +22,8 @@ public partial class CollisionTester
                 }
             }
         }
-
         return results;
     }
-
 
     private void NarrowSweep_Scalar(BoxBuffer bufferA, BoxBuffer bufferB, List<(int aIndex, int bIndex)> results)
     {
@@ -42,7 +40,6 @@ public partial class CollisionTester
                 results.Add((dynamicIndex, staticIndex));
             }
         }
-
         return results;
     }
 }
