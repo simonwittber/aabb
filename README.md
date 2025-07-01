@@ -1,6 +1,6 @@
 # A really simple collision library for .NET
 
-It is tested, benchmarked, vectorized and multithreaded.
+It is tested, benchmarked, vectorized and multithreaded. It uses a sweep and prune algorithm.
 
     var collider = new CollisionTester();
     
