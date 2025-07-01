@@ -15,7 +15,7 @@ public partial class CollisionTester
     {
         for (var i = startIndex; i < endIndex; i++)
         {
-            var q = FindSearchStartIndex(aMin, bMin, bMax, bCount, i);
+            var q = FindSearchStartIndex(bMin, bMax, bCount, aMin[i]);
 
             for (var j = q; j < bCount && bMin[j] <= aMax[i]; j++)
             {
@@ -28,16 +28,16 @@ public partial class CollisionTester
         return results;
     }
 
-    private static int FindSearchStartIndex(float[] aMin, float[] bMin, float[] bMax, int bCount, int i)
+    private static int FindSearchStartIndex(float[] bMin, float[] bMax, int bCount, float aMinValue)
     {
-        var q = Array.BinarySearch(bMin, 0, bCount, aMin[i]);
+        var q = Array.BinarySearch(bMin, 0, bCount, aMinValue);
         if (q < 0)
         {
             q = ~q;
         }
             
         // go backwards in case previous elements have a width that covers aMin[i]
-        while (q > 0 && bMax[q - 1] >= aMin[i])
+        while (q > 0 && bMax[q - 1] >= aMinValue)
             q--;
         return q;
     }

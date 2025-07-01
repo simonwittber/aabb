@@ -52,21 +52,18 @@ public class TestCollisionTester
     public void TestMultiCollision([Values] CollisionTester.ExecutionMode executionMode)
     {
         var collider = new CollisionTester() { Mode = executionMode };
-        var box1 = new Box(0, 0, 1, 1); 
-        var box2 = new Box(5, 0, 1, 1);
-        var box3 = new Box(1, 0, 1, 1);
-
         
         var bufferA = new CollisionLayer();
-        var bufferB = new CollisionLayer();
-            
-        bufferA.Add(box1);
-        bufferA.Add(box2);
-        bufferA.Add(box3);
+        bufferA.Add(new Box(0, 0, 1, 1));
+        bufferA.Add(new Box(5, 0, 1, 1));
+        bufferA.Add(new Box(1, 0, 1, 1));
         
+        var bufferB = new CollisionLayer();
         bufferB.Add(new Box(0.5f,0,1,1));
         
         var collisions = collider.Collisions(bufferA, bufferB);
+        Console.WriteLine(string.Join(",",collisions));
+        
         Assert.That(collisions, Has.Count.EqualTo(2));
         Assert.That(collisions, Contains.Item((0,0)));
         Assert.That(collisions, Contains.Item((2,0)));

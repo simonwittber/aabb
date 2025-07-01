@@ -15,7 +15,7 @@ public partial class CollisionTester
             var min = new Vector<float>(aMin[i]);
             var max = new Vector<float>(aMax[i]);
             
-            var q = FindSearchStartIndex(aMin, bMin, bMax, bCount, i);
+            var q = FindSearchStartIndex(bMin, bMax, bCount, aMin[i]);
             var j = q;
             // vectorized inner loop
             for (; j + W <= bCount && bMin[j] <= aMax[i]; j += W)
