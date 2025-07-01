@@ -4,26 +4,24 @@ namespace AABB;
 
 public partial class CollisionTester
 {
-    private static void BufferVsBuffer_Vectorized(float[] aCenters, float[] aExtents, int aCount, float[] bCenters, float[] bExtents, int bCount, List<(int aIndex, int bIndex)> results)
+    private static void BufferVsBuffer_Vectorized(float[] aMin, float[] aMax, int aCount, float[] bMin, float[] bMax, int bCount, List<(int aIndex, int bIndex)> results)
     {
         var W = Vector<float>.Count;
         (int startIndex, int endIndex) = (0, aCount);
+        
         for (var i = startIndex; i < endIndex; i++)
         {
             // build the scalar AABB[i] min/max as a Vector
-            var center = new Vector<float>(aCenters[i]);
-            var extent = new Vector<float>(aExtents[i]);
-            var min = center - extent;
-            var max = center + extent;
-
-            var j = 0;
+            var min = new Vector<float>(aMin[i]);
+            var max = new Vector<float>(aMax[i]);
+            
+            var q = FindSearchStartIndex(aMin, bMin, bMax, bCount, i);
+            var j = q;
             // vectorized inner loop
-            for (; j + W <= bCount; j += W)
+            for (; j + W <= bCount && bMin[j] <= aMax[i]; j += W)
             {
-                var testCenter = new Vector<float>(bCenters.AsSpan(j, W));
-                var testExtent = new Vector<float>(bExtents.AsSpan(j, W));
-                var testMin = testCenter - testExtent;
-                var testMax = testCenter + testExtent;
+                var testMin = new Vector<float>(bMin.AsSpan(j, W));
+                var testMax = new Vector<float>(bMax.AsSpan(j, W));
 
                 // overlap on X if aMin <= bMax && aMax >= bMin
                 var mask = Vector.LessThanOrEqual(min, testMax) & Vector.GreaterThanOrEqual(max, testMin);
@@ -40,9 +38,9 @@ public partial class CollisionTester
             }
 
             // scalar remainder that could not be vectorized
-            for (; j < bCount; j++)
+            for (; j < bCount && bMin[j] <= aMax[i]; j++)
             {
-                if (aCenters[i] - aExtents[i] <= bCenters[j] + bExtents[j] && aCenters[i] + aExtents[i] >= bCenters[j] - bExtents[j])
+                if (aMin[i] <= bMax[j] && aMax[i] >= bMin[j])
                 {
                     // Mark intersection
                     results.Add((i, j));
@@ -51,7 +49,7 @@ public partial class CollisionTester
         }
     }
     
-    private void NarrowSweep_Vectorized(BoxBuffer bufferA, BoxBuffer bufferB, List<(int aIndex, int bIndex)> results)
+    private void NarrowSweep_Vectorized(CollisionLayer bufferA, CollisionLayer bufferB, List<(int aIndex, int bIndex)> results)
     {
         
         int W = Vector<float>.Count;
@@ -59,10 +57,10 @@ public partial class CollisionTester
         int idx = 0;
 
         // temporary SoA buffers for one Vector-width of pairs
-        Span<float> centerTmp = stackalloc float[W];
-        Span<float> extentTmp = stackalloc float[W];
-        Span<float> testCenter = stackalloc float[W];
-        Span<float> testExtent = stackalloc float[W];
+        Span<float> aMin = stackalloc float[W];
+        Span<float> aMax = stackalloc float[W];
+        Span<float> bMin = stackalloc float[W];
+        Span<float> bMax = stackalloc float[W];
 
         // Vector-ized Y-axis test on each block of W candidate pairs
         while (idx + W <= n)
@@ -71,23 +69,19 @@ public partial class CollisionTester
             for (int k = 0; k < W; k++)
             {
                 var (dynamicIndex, staticIndex) = intersectsX[idx + k];
-                centerTmp[k] = bufferA.centerY[dynamicIndex];
-                extentTmp[k] = bufferA.extentY[dynamicIndex];
-                testCenter[k] = bufferB.centerY[staticIndex];
-                testExtent[k] = bufferB.extentY[staticIndex];
+                aMin[k] = bufferA.minY[dynamicIndex];
+                aMax[k] = bufferA.maxY[dynamicIndex];
+                bMin[k] = bufferB.minY[staticIndex];
+                bMax[k] = bufferB.maxY[staticIndex];
             }
 
             // build A’s min/max
-            var center = new Vector<float>(centerTmp);
-            var extent = new Vector<float>(extentTmp);
-            var min = center - extent;
-            var max = center + extent;
+            var min = new Vector<float>(aMin);
+            var max = new Vector<float>(aMax);
 
             // build B’s min/max
-            var tCenter = new Vector<float>(testCenter);
-            var tExtent = new Vector<float>(testExtent);
-            var tMin = tCenter - tExtent;
-            var tMax = tCenter + tExtent;
+            var tMin = new Vector<float>(bMin);
+            var tMax = new Vector<float>(bMax);
 
             // single‐axis overlap test on Y
             var mask = Vector.LessThanOrEqual(min, tMax) & Vector.GreaterThanOrEqual(max, tMin);
@@ -104,7 +98,7 @@ public partial class CollisionTester
         for (; idx < n; idx++)
         {
             var (dynamicIndex, staticIndex) = intersectsX[idx];
-            if (bufferA.centerY[dynamicIndex] - bufferA.extentY[dynamicIndex] <= bufferB.centerY[staticIndex] + bufferB.extentY[staticIndex] && bufferA.centerY[dynamicIndex] + bufferA.extentY[dynamicIndex] >= bufferB.centerY[staticIndex] - bufferB.extentY[staticIndex])
+            if (bufferA.minY[dynamicIndex] <= bufferB.maxY[staticIndex] && bufferA.maxY[dynamicIndex] >= bufferB.minY[staticIndex])
             {
                 results.Add((dynamicIndex, staticIndex));
             }

@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace AABB;
 
-public struct Box
+public struct Box : IEquatable<Box>
 {
     public Vector2 center;
     public Vector2 extents;
@@ -24,5 +24,35 @@ public struct Box
                a.xMax >= b.xMin &&
                a.yMin <= b.yMax &&
                a.yMax >= b.yMin;
+    }
+
+    public bool Equals(Box other)
+    {
+        return center.Equals(other.center) && extents.Equals(other.extents);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Box other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(center, extents);
+    }
+
+    public static bool operator ==(Box left, Box right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Box left, Box right)
+    {
+        return !left.Equals(right);
+    }
+
+    public override string ToString()
+    {
+        return $"Box({center}, {extents})";
     }
 }

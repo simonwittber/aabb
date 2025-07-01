@@ -10,25 +10,31 @@ public partial class CollisionTester
         float[] bCenters, float[] bExtents, int bCount, List<(int aIndex, int bIndex)> results)
     {
         var ranges = Partitioner.Create(0, aCount);
-        var allResults = new ConcurrentBag<List<(int, int)>>();
 
         Parallel.ForEach(ranges,
-            () => new List<(int aIndex, int bIndex)>(),
+            () => GetResultsList(),
             (range, state, localResults) => BufferVsBufferWorker(aCenters, aExtents, bCenters, bExtents, bCount, localResults, range.Item1, range.Item2),
-            localResults => { allResults.Add(localResults); });
-        foreach (var i in allResults) results.AddRange(i);
+            localResults =>
+            {
+                lock(results)
+                    results.AddRange(localResults);
+                ReturnResultsList(localResults);
+            });
     }
     
-    private void NarrowSweep_Threaded(BoxBuffer bufferA, BoxBuffer bufferB, List<(int aIndex, int bIndex)> results)
+    private void NarrowSweep_Threaded(CollisionLayer bufferA, CollisionLayer bufferB, List<(int aIndex, int bIndex)> results)
     {
         var ranges = Partitioner.Create(0, intersectsX.Count);
-        var allResults = new ConcurrentBag<List<(int, int)>>();
 
         Parallel.ForEach(ranges,
-            () => new List<(int aIndex, int bIndex)>(),
+            () => GetResultsList(),
             (range, state, localResults) => NarrowSweepWorker(bufferA, bufferB, localResults, range.Item1, range.Item2),
-            localResults => { allResults.Add(localResults); });
-        foreach (var i in allResults) results.AddRange(i);
+            localResults =>
+            {
+                lock(results)
+                    results.AddRange(localResults);
+                ReturnResultsList(localResults);
+            });
     }
 
     
