@@ -6,24 +6,28 @@ public static class CollisionLayerExtensions
 {
     public static List<int> HitTest(this CollisionLayer layer, Vector2 position)
     {
-        var xResults = new List<int>();
-        var q = FindSearchStartIndex(layer.minX, layer.maxX, layer.Count, position.X);
+        var results = new List<int>();
+        
+        float x = position.X, y = position.Y;
+        int n = layer.Count;
+        var minX = layer.minX;
+        var maxX = layer.maxX;
+        var minY = layer.minY;
+        var maxY = layer.maxY;
+
+        var q = FindSearchStartIndex(minX, maxX, n, x);
         // x sweep
-        for (var j = q; j < layer.Count && layer.minX[j] <= position.X; j++)
+        for (int j = q; j < n && minX[j] <= x; j++)
         {
-            if (position.X <= layer.maxX[j] && position.X >= layer.minX[j])
-            {
-                xResults.Add(j);
-            }
+            // X-test
+            if (x < minX[j] || x > maxX[j]) 
+                continue;
+
+            // Y-test immediately
+            if (y >= minY[j] && y <= maxY[j])
+                results.Add(j);
         }
-        // y sweep
-        var yResults = new List<int>();
-        foreach (var i in xResults)
-        {
-            if (position.Y <= layer.maxY[i] && position.Y >= layer.minY[i])
-                yResults.Add(i);
-        }
-        return yResults;
+        return results;
     }
 
     private static int FindSearchStartIndex(float[] bMin, float[] bMax, int bCount, float aMinValue)
@@ -33,10 +37,65 @@ public static class CollisionLayerExtensions
         {
             q = ~q;
         }
-
         // go backwards in case previous elements have a width that covers aMin[i]
         while (q > 0 && bMax[q - 1] >= aMinValue)
             q--;
         return q;
+    }
+
+    public static List<int> HitTestVectorized(this CollisionLayer layer, Vector2 position)
+    {
+        float x = position.X, y = position.Y;
+        int n = layer.Count;
+        var minX = layer.minX;
+        var maxX = layer.maxX;
+        var minY = layer.minY;
+        var maxY = layer.maxY;
+        var results = new List<int>();
+
+        // find the first index where minX[i] <= x
+        int i = FindSearchStartIndex(minX, maxX, n, x);
+
+        int W = Vector<float>.Count;
+        var xVec = new Vector<float>(x);
+        var yVec = new Vector<float>(y);
+
+        // vectorized main loop
+        for (; i + W <= n && minX[i] <= x; i += W)
+        {
+            // quick block-out: if the first lane already starts past x, we're done
+            if (minX[i] > x) break;
+
+            // load W lanes at once
+            var vMinX = new Vector<float>(minX, i);
+            var vMaxX = new Vector<float>(maxX, i);
+            var vMinY = new Vector<float>(minY, i);
+            var vMaxY = new Vector<float>(maxY, i);
+
+            // test X and Y overlaps
+            var mask = 
+                Vector.LessThanOrEqual(vMinX, xVec)
+                & Vector.GreaterThanOrEqual(vMaxX, xVec)
+                & Vector.LessThanOrEqual(vMinY, yVec)
+                & Vector.GreaterThanOrEqual(vMaxY, yVec);
+
+            // extract any hits in this block
+            for (int k = 0; k < W; k++)
+            {
+                if (mask[k] != 0)
+                    results.Add(i + k);
+            }
+        }
+
+        // scalar tail
+        for (; i < n && minX[i] <= x; i++)
+        {
+            if (x >= minX[i] && x <= maxX[i] && y >= minY[i] && y <= maxY[i])
+            {
+                results.Add(i);
+            }
+        }
+
+        return results;
     }
 }

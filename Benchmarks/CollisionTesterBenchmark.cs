@@ -7,7 +7,7 @@ namespace AABB.Benchmarks;
 [MarkdownExporterAttribute.GitHub]
 [SimpleJob(RuntimeMoniker.Net90, launchCount: 1, warmupCount: 3, iterationCount: 3)]
 [MemoryDiagnoser]
-public class MyBenchmarks
+public class CollisionTesterBenchmark
 {
     [Params(CollisionTester.ExecutionMode.Scalar, CollisionTester.ExecutionMode.Threaded, CollisionTester.ExecutionMode.Vectorized, CollisionTester.ExecutionMode.ThreadedVectorized, CollisionTester.ExecutionMode.Auto)]
     public CollisionTester.ExecutionMode ExecutionMode;
