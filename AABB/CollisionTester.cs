@@ -13,10 +13,10 @@ public partial class CollisionTester
     
     public ExecutionMode Mode = ExecutionMode.Auto;
     
-    public List<(int aIndex, int bIndex)> Collisions(CollisionLayer layerA, CollisionLayer layerB)
+    public void Collisions(CollisionLayer layerA, CollisionLayer layerB, List<(int aIndex, int bIndex)> results)
     {
         BroadPhaseCollisions(layerA, layerB);
-        return NarrowPhaseCollisions(layerA, layerB);
+        NarrowPhaseCollisions(layerA, layerB, results);
     }
 
     void BroadPhaseCollisions(CollisionLayer layerA, CollisionLayer layerB)
@@ -64,10 +64,10 @@ public partial class CollisionTester
         return Mode;
     }
 
-    List<(int aIndex, int bIndex)> NarrowPhaseCollisions(CollisionLayer layerA, CollisionLayer layerB)
+    void NarrowPhaseCollisions(CollisionLayer layerA, CollisionLayer layerB, List<(int aIndex, int bIndex)> results)
     {
         intersectsY.Clear();
-        if (intersectsX.Count <= 0) return intersectsY;
+        if (intersectsX.Count <= 0) return;
         Mode = ChooseExecutionMode(intersectsX.Count);
         switch (Mode)
         {
@@ -88,8 +88,7 @@ public partial class CollisionTester
         for (int i = 0; i < intersectsY.Count; i++)
         {
             var (dynamicIndex, staticIndex) = intersectsY[i];
-            intersectsY[i] = (layerA.ids[dynamicIndex], layerB.ids[staticIndex]);
+            results.Add((layerA.ids[dynamicIndex], layerB.ids[staticIndex]));
         }
-        return intersectsY;
     }
 }

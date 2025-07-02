@@ -4,10 +4,8 @@ namespace AABB;
 
 public static class CollisionLayerExtensions
 {
-    public static List<int> HitTest(this CollisionLayer layer, Vector2 position)
+    public static void HitTest(this CollisionLayer layer, Vector2 position, List<int> results)
     {
-        var results = new List<int>();
-        
         float x = position.X, y = position.Y;
         int n = layer.Count;
         var minX = layer.minX;
@@ -27,7 +25,6 @@ public static class CollisionLayerExtensions
             if (y >= minY[j] && y <= maxY[j])
                 results.Add(j);
         }
-        return results;
     }
 
     private static int FindSearchStartIndex(float[] bMin, float[] bMax, int bCount, float aMinValue)
@@ -43,7 +40,7 @@ public static class CollisionLayerExtensions
         return q;
     }
 
-    public static List<int> HitTestVectorized(this CollisionLayer layer, Vector2 position)
+    public static void HitTestVectorized(this CollisionLayer layer, Vector2 position, List<int> results)
     {
         float x = position.X, y = position.Y;
         int n = layer.Count;
@@ -51,7 +48,6 @@ public static class CollisionLayerExtensions
         var maxX = layer.maxX;
         var minY = layer.minY;
         var maxY = layer.maxY;
-        var results = new List<int>();
 
         // find the first index where minX[i] <= x
         int i = FindSearchStartIndex(minX, maxX, n, x);
@@ -95,7 +91,5 @@ public static class CollisionLayerExtensions
                 results.Add(i);
             }
         }
-
-        return results;
     }
 }

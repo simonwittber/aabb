@@ -12,7 +12,7 @@ public class HitTestBenchmark
     [Params(10, 100, 1000, 10000, 100000)] public int N = 1000;
     private CollisionLayer bufferA;
     private Vector2[] points = new Vector2[100];
-
+    List<int> hits = new List<int>(32);
     [IterationSetup]
     public void Setup()
     {
@@ -33,8 +33,9 @@ public class HitTestBenchmark
     {
         for (var i = 0; i < points.Length; i++)
         {
+            hits.Clear();
             var point = points[i];
-            bufferA.HitTest(point);
+            bufferA.HitTest(point, hits);
         }
     }
     
@@ -43,8 +44,9 @@ public class HitTestBenchmark
     {
         for (var i = 0; i < points.Length; i++)
         {
+            hits.Clear();
             var point = points[i];
-            bufferA.HitTestVectorized(point);
+            bufferA.HitTestVectorized(point, hits);
         }
     }
 }
