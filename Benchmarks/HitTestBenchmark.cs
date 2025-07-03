@@ -22,7 +22,7 @@ public class HitTestBenchmark
         float S() => rnd.NextSingle() * 50;
 
         for (int i = 0; i < N; i++)
-            bufferA.Add(new Box(P(), P(), S(), S()));
+            bufferA.Add(new Box(i, P(), P(), S(), S()));
 
         for (int i = 0; i < 100; i++)
             points[i] = new Vector2(rnd.NextSingle(), rnd.NextSingle()) * 2000;

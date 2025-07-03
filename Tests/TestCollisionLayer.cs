@@ -1,3 +1,4 @@
+using System.Numerics;
 using AABB;
 using NUnit.Framework;
 
@@ -11,9 +12,9 @@ public class TestCollisionLayer
     {
         var layer = new CollisionLayer();
         Assert.That(layer.Count, Is.EqualTo(0));
-        layer.Add(new Box(0, 0, 1, 1));
+        layer.Add(new Box(0, 0, 0, 1, 1));
         Assert.That(layer.Count, Is.EqualTo(1));
-        layer.Add(new Box(1, 1, 2, 2));
+        layer.Add(new Box(1, 1, 1, 2, 2));
         Assert.That(layer.Count, Is.EqualTo(2));
     }
 
@@ -21,22 +22,24 @@ public class TestCollisionLayer
     public void TestUpdateChangesBox()
     {
         var layer = new CollisionLayer();
-        var id = layer.Add(new Box(0, 0, 1, 1));
-        layer.Update(id, new Box(2, 2, 3, 3));
-        var newBox = layer.Get(id);
-        Assert.That(newBox, Is.EqualTo(new Box(2, 2, 3, 3)));
+        var box = new Box(0, 0, 0, 1, 1);
+        layer.Add(box);
+        box.center = new Vector2(1, 1);
+        layer.Update(box);
+        var newBox = layer.Get(box.id);
+        Assert.That(newBox, Is.EqualTo(box));
     }
 
     [Test]
     public void TestRemoveDecreasesCount()
     {
         var layer = new CollisionLayer();
-        var id1 = layer.Add(new Box(0, 0, 1, 1));
-        var id2 = layer.Add(new Box(1, 1, 2, 2));
+        layer.Add(new Box(0, 0, 0, 1, 1));
+        layer.Add(new Box(1, 1, 1, 2, 2));
         Assert.That(layer.Count, Is.EqualTo(2));
-        layer.Remove(id1);
+        layer.Remove(0);
         Assert.That(layer.Count, Is.EqualTo(1));
-        layer.Remove(id2);
+        layer.Remove(1);
         Assert.That(layer.Count, Is.EqualTo(0));
     }
 
@@ -44,7 +47,7 @@ public class TestCollisionLayer
     public void TestRemoveInvalidIdThrows()
     {
         var layer = new CollisionLayer();
-        Assert.Throws<IndexOutOfRangeException>(() => layer.Remove(0));
+        Assert.Throws<KeyNotFoundException>(() => layer.Remove(0));
     }
 
     [Test]
@@ -54,7 +57,7 @@ public class TestCollisionLayer
         var layer = new CollisionLayer();
         for (int i = 0; i < xValues.Length; i++)
         {
-            var id = layer.Add(new Box(xValues[i], 0, 1, 1));
+            layer.Add(new Box(i, xValues[i], 0, 1, 1));
         }
         var boxes = layer.ToArray();
         for (int i = 0; i < boxes.Length - 1; i++)
@@ -69,11 +72,13 @@ public class TestCollisionLayer
         int[] xValues = [1,56,-2,3,7,1,2,4,2,-3,1,5,7,9,8,6,4,-3,2,1];
         var layer = new CollisionLayer();
         var map = new Dictionary<int, Box>();
+        int id = 0;
         foreach (var x in xValues)
         {
-            var box = new Box(x, 0, x*2, 1);
-            var id = layer.Add(box);
+            var box = new Box(id, x, 0, x*2, 1);
+            layer.Add(box);
             map[id] = box;
+            id += 1;
         }
         foreach (var b in layer)
         {

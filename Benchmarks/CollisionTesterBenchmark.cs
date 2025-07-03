@@ -16,6 +16,7 @@ public class CollisionTesterBenchmark
     public int N = 1000;
     private CollisionLayer bufferA, bufferB;
     private CollisionTester collider;
+    public List<(int, int)> results = new();
     [IterationSetup]
     public void Setup()
     {
@@ -26,20 +27,22 @@ public class CollisionTesterBenchmark
         float S() => rnd.NextSingle() * 50;
         
         for (int i = 0; i < N/10; i++)
-            bufferA.Add(new Box(P(), P(), S(), S()));
+            bufferA.Add(new Box(i, P(), P(), S(), S()));
         for (int i = 0; i < N; i++)
         {
-            bufferB.Add(new Box(P(), P(), S(), S()));
+            bufferB.Add(new Box(N+i, P(), P(), S(), S()));
         }
         collider = new CollisionTester();
-        collider.Collisions(bufferA, bufferB);
+        results.Clear();
+        collider.Collisions(bufferA, bufferB, results);
     }
 
     [Benchmark(OperationsPerInvoke =1)]
     public void TestCollisions()
     {
         collider.Mode = ExecutionMode;
-        collider.Collisions(bufferA, bufferB);    
+        results.Clear();
+        collider.Collisions(bufferA, bufferB, results);    
     }
     
    

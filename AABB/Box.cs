@@ -4,15 +4,24 @@ namespace AABB;
 
 public struct Box : IEquatable<Box>
 {
+    public int id { get; private set; }
     public Vector2 center;
     public Vector2 extents;
 
-    public Box(float x, float y, float w, float h)
+    public Box(int id, float x, float y, float w, float h)
     {
+        this.id = id;
         this.center = new Vector2(x, y);
         this.extents = new Vector2(w/2f, h/2f);
     }
-    
+
+    public Box(int id, Vector2 position, Vector2 size)
+    {
+        this.id = id;
+        this.center = position;
+        this.extents = size / 2f;
+    }
+
     public float xMin => center.X - extents.X;
     public float xMax => center.X + extents.X;
     public float yMin => center.Y - extents.Y;
@@ -28,7 +37,7 @@ public struct Box : IEquatable<Box>
 
     public bool Equals(Box other)
     {
-        return center.Equals(other.center) && extents.Equals(other.extents);
+        return id.Equals(other.id) && center.Equals(other.center) && extents.Equals(other.extents);
     }
 
     public override bool Equals(object? obj)
@@ -38,7 +47,7 @@ public struct Box : IEquatable<Box>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(center, extents);
+        return HashCode.Combine(id, center, extents);
     }
 
     public static bool operator ==(Box left, Box right)
@@ -53,6 +62,6 @@ public struct Box : IEquatable<Box>
 
     public override string ToString()
     {
-        return $"Box({center}, {extents})";
+        return $"Box({id}, {center}, {extents})";
     }
 }

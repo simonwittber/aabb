@@ -4,7 +4,9 @@ namespace AABB;
 
 public class CollisionLayer
 {
-    private int[] idMap = new int[37];
+    public string? Name { get; set; }
+
+    private Dictionary<int, int> idMap = new();
 
     internal int[] ids = new int[37];
     internal float[] minX = new float[37];
@@ -32,7 +34,6 @@ public class CollisionLayer
         if (requiredSize < ids.Length) return;
         requiredSize = Math.Max(requiredSize, ids.Length * 2);
         Array.Resize(ref ids, requiredSize);
-        Array.Resize(ref idMap, requiredSize);
         Array.Resize(ref minX, requiredSize);
         Array.Resize(ref minY, requiredSize);
         Array.Resize(ref maxX, requiredSize);
@@ -60,8 +61,10 @@ public class CollisionLayer
         idMap[idB] = index;
     }
 
-    public int Add(Box box)
+    public void Add(Box box)
     {
+        if(idMap.ContainsKey(box.id))
+            throw new InvalidOperationException("Collision layer already contains this ID");
         Resize();
         // find index to insert using binary search on minX
         // find first index in minX where minX[index] >= box.xMin
@@ -85,11 +88,9 @@ public class CollisionLayer
         // Set the new box at the found index
         Set(index, box.xMin, box.yMin, box.xMax, box.yMax);
         // Assign the ID to the new box
-        var id = Count;
-        ids[index] = id;
-        idMap[id] = index;
+        ids[index] = box.id;
+        idMap[box.id] = index;
         Count++;
-        return id;
     }
 
     private int FindInsertIndex(Box box)
@@ -100,9 +101,9 @@ public class CollisionLayer
         return index;
     }
 
-    public void Update(int id, Box box)
+    public void Update(Box box)
     {
-        var index = idMap[id];
+        var index = idMap[box.id];
         minX[index] = box.xMin;
         minY[index] = box.yMin;
         maxX[index] = box.xMax;
@@ -147,11 +148,8 @@ public class CollisionLayer
     {
         var min = new Vector2(minX[index], minY[index]);
         var max = new Vector2(maxX[index], maxY[index]);
-        var box = new Box
-        {
-            center = 0.5f * (min + max),
-            extents = 0.5f * (max - min),
-        };
+        var id = ids[index];
+        var box = new Box(id, 0.5f * (min + max), (max - min));
         return box;
     }
 
