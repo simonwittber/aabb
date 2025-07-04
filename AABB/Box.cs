@@ -8,18 +8,25 @@ public struct Box : IEquatable<Box>
     public Vector2 center;
     public Vector2 extents;
 
-    public Box(int id, float x, float y, float w, float h)
+    public Box(int id, float centerX, float centerY, float width, float height)
     {
         this.id = id;
-        this.center = new Vector2(x, y);
-        this.extents = new Vector2(w/2f, h/2f);
+        this.center = new Vector2(centerX, centerY);
+        this.extents = new Vector2(width/2f, height/2f);
     }
 
-    public Box(int id, Vector2 position, Vector2 size)
+    public Box(int id, Vector2 center, Vector2 size)
     {
         this.id = id;
-        this.center = position;
+        this.center = center;
         this.extents = size / 2f;
+    }
+
+    public static Box FromMinMax(int id, Vector2 min, Vector2 max)
+    {
+        var center = (min + max) / 2f;
+        var size = Vector2.Abs(max - min);
+        return new Box(id, center, size);
     }
 
     public float xMin => center.X - extents.X;
