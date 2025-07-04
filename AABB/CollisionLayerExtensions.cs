@@ -4,6 +4,35 @@ namespace AABB;
 
 public static class CollisionLayerExtensions
 {
+    public static void HitTest(this CollisionLayer layer, Vector2 position, Vector2 size, List<int> results)
+    {
+        float x = position.X, y = position.Y;
+        int n = layer.Count;
+        var minX = layer.minX;
+        var maxX = layer.maxX;
+        var minY = layer.minY;
+        var maxY = layer.maxY;
+        var ids = layer.ids;
+        
+        var x1 = x - size.X * 0.5f;
+        var x2 = x + size.X * 0.5f;
+        var y1 = y - size.Y * 0.5f;
+        var y2 = y + size.Y * 0.5f;
+        
+        var q = FindSearchStartIndex(minX, maxX, n, x1);
+        // x sweep
+        for (int j = q; j < n && minX[j] <= x2; j++)
+        {
+            // X-test
+            if (x2 < minX[j] || x1 > maxX[j]) 
+                continue;
+
+            // Y-test immediately
+            if (y2 >= minY[j] && y1 <= maxY[j])
+                results.Add(ids[j]);
+        }
+    }
+    
     public static void HitTest(this CollisionLayer layer, Vector2 position, List<int> results)
     {
         float x = position.X, y = position.Y;
@@ -12,6 +41,7 @@ public static class CollisionLayerExtensions
         var maxX = layer.maxX;
         var minY = layer.minY;
         var maxY = layer.maxY;
+        var ids = layer.ids;
 
         var q = FindSearchStartIndex(minX, maxX, n, x);
         // x sweep
@@ -23,8 +53,9 @@ public static class CollisionLayerExtensions
 
             // Y-test immediately
             if (y >= minY[j] && y <= maxY[j])
-                results.Add(j);
+                results.Add(ids[j]);
         }
+        
     }
 
     private static int FindSearchStartIndex(float[] bMin, float[] bMax, int bCount, float aMinValue)
